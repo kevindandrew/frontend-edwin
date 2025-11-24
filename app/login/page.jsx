@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +29,6 @@ export default function LoginPage() {
     }
 
     try {
-      console.log("Intentando login con usuario:", username);
-
-      // Hacer login al backend usando JSON
       const response = await fetch(
         "https://backend-edwin.onrender.com/auth/login",
         {
@@ -46,8 +43,6 @@ export default function LoginPage() {
         }
       );
 
-      console.log("📡 Respuesta del servidor:", response.status);
-
       if (!response.ok) {
         let errorData = {};
         const contentType = response.headers.get("content-type");
@@ -57,7 +52,6 @@ export default function LoginPage() {
           const text = await response.text();
           errorData = { detail: text };
         }
-        console.error("❌ Error del servidor:", errorData);
         setError(
           errorData.detail || "Credenciales incorrectas. Intenta nuevamente."
         );
@@ -65,24 +59,14 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
-      console.log("✅ Login exitoso, datos recibidos:", {
-        ...data,
-        access_token: data.access_token ? "***" : undefined,
-      });
 
-      // Guardar token en cookies
       if (data.access_token) {
-        // Guardar token con expiración de 30 días
         const expires = new Date();
         expires.setDate(expires.getDate() + 30);
         document.cookie = `token=${
           data.access_token
         }; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
 
-        console.log("🍪 Token guardado en cookies");
-        console.log("Token:", data.access_token.substring(0, 30) + "...");
-
-        // Guardar información del usuario en localStorage
         if (data.usuario) {
           localStorage.setItem(
             "user",
@@ -94,18 +78,13 @@ export default function LoginPage() {
               roleId: data.usuario.rol?.id_rol,
             })
           );
-          console.log("💾 Información del usuario guardada en localStorage");
         }
 
-        console.log("✅ Redirigiendo al dashboard...");
-
-        // Redirigir al dashboard
         router.push("/admin");
       } else {
         setError("Error al obtener el token. Intenta nuevamente.");
       }
     } catch (err) {
-      console.error("❌ Error en login:", err);
       setError("Error de conexión. Verifica tu conexión a internet.");
     }
   };
@@ -117,12 +96,23 @@ export default function LoginPage() {
       </div>
 
       <Card className="w-full max-w-md p-8 shadow-xl">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/logocompleto.png"
+            alt="Logo de la empresa"
+            width={200}
+            height={80}
+            priority
+            className="object-contain"
+          />
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Bienvenido
           </h1>
           <p className="text-muted-foreground text-sm">
-            Inicia sesión con tu cuenta de administrador
+            Inicia sesión con tu cuenta
           </p>
         </div>
 
@@ -181,12 +171,6 @@ export default function LoginPage() {
             ¿No tienes cuenta? Contacta al administrador
           </p>
         </div>
-
-        <Link href="/" className="block mt-4">
-          <Button variant="outline" className="w-full">
-            Volver al Inicio
-          </Button>
-        </Link>
       </Card>
     </main>
   );

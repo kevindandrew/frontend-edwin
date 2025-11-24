@@ -1,139 +1,273 @@
-'use client'
+"use client";
 
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { TrendingUp, Search, Plus, Eye, Trash2 } from 'lucide-react'
-import { useState } from 'react'
-
-const initialVentas = [
-  { id: 1, cliente: 'Hospital Central San José', fecha: '2024-01-15', equipos: ['Monitor Cardíaco', 'Desfibrilador'], total: 45000.00, estado: 'Completada' },
-  { id: 2, cliente: 'Clínica Medisalud', fecha: '2024-01-18', equipos: ['Ventilador Pulmonar', 'Monitor ECG'], total: 120000.50, estado: 'Completada' },
-  { id: 3, cliente: 'Centro Médico del Occidente', fecha: '2024-01-20', equipos: ['Ecógrafo Ultrasónico'], total: 75000.00, estado: 'Pendiente' },
-  { id: 4, cliente: 'Laboratorio Biotech', fecha: '2024-01-22', equipos: ['Incubadora Neonatal', 'Monitor'], total: 32000.99, estado: 'Completada' },
-  { id: 5, cliente: 'Fundación Salud Integral', fecha: '2024-01-25', equipos: ['Bomba de Infusión', 'Monitor Multiparámetro'], total: 89000.50, estado: 'En Proceso' },
-]
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import useVentas from "@/hooks/useVentas";
+import useClientes from "@/hooks/useClientes";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function VentasPage() {
-  const [ventas, setVentas] = useState(initialVentas)
-  const [search, setSearch] = useState('')
+  const {
+    ventas,
+    loading,
+    fetchDetallesPorVenta,
+    crearVenta,
+    actualizarVenta,
+    eliminarVenta,
+  } = useVentas();
+  const { clientes, fetchClienteById } = useClientes();
+  const [search, setSearch] = useState("");
+  const [detallesPorVenta, setDetallesPorVenta] = useState({});
+  const [clientesPorVenta, setClientesPorVenta] = useState({});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const filteredVentas = ventas.filter(v =>
-    v.cliente.toLowerCase().includes(search.toLowerCase())
-  )
+  useEffect(() => {
+    cargarDetalles();
+  }, [ventas]);
+
+  const cargarDetalles = async () => {
+    const detallesMap = {};
+    const clientesMap = {};
+    for (const venta of ventas) {
+      const detalles = await fetchDetallesPorVenta(venta.id_venta);
+      detallesMap[venta.id_venta] = detalles;
+
+      // Cargar cliente
+      const cliente = await fetchClienteById(venta.id_cliente);
+      clientesMap[venta.id_venta] = cliente;
+    }
+    setDetallesPorVenta(detallesMap);
+    setClientesPorVenta(clientesMap);
+  };
+
+  const filteredVentas = ventas
+    .filter((v) => {
+      const detalles = detallesPorVenta[v.id_venta] || [];
+      const cliente = clientesPorVenta[v.id_venta];
+      const equipoNombres = detalles
+        .map((d) => d.equipo?.nombre_equipo || "")
+        .join(" ");
+      const clienteNombre = cliente?.nombre_institucion || "";
+      return (
+        v.estado_venta.toLowerCase().includes(search.toLowerCase()) ||
+        equipoNombres.toLowerCase().includes(search.toLowerCase()) ||
+        clienteNombre.toLowerCase().includes(search.toLowerCase()) ||
+        v.id_venta.toString().includes(search)
+      );
+    })
+    .sort((a, b) => a.id_venta - b.id_venta);
+
+  const handleNueva = () => {
+    setVentaSeleccionada(null);
+    setIsEditing(false);
+    setDialogOpen(true);
+  };
+
+  const handleVer = (venta) => {
+    setVentaSeleccionada({
+      ...venta,
+      detalles: detallesPorVenta[venta.id_venta] || [],
+    });
+    setViewDialogOpen(true);
+  };
+
+  const handleEditar = (venta) => {
+    setVentaSeleccionada({
+      ...venta,
+      detalles: detallesPorVenta[venta.id_venta] || [],
+    });
+    setIsEditing(true);
+    setDialogOpen(true);
+  };
+
+  const handleEliminar = (venta) => {
+    setVentaSeleccionada(venta);
+    setDeleteDialogOpen(true);
+  };
 
   const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'Completada':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-      case 'En Proceso':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-      case 'Pendiente':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-      case 'Cancelada':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-      default:
-        return 'bg-gray-100 text-gray-700'
-    }
-  }
+    const colors = {
+      Entregada:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+      "En Proceso":
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      Pendiente:
+        "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+      Cancelada: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    };
+    return (
+      colors[estado] ||
+      "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+    );
+  };
 
-  const totalVentas = ventas.reduce((sum, v) => sum + v.total, 0)
-  const ventasCompletadas = ventas.filter(v => v.estado === 'Completada').reduce((sum, v) => sum + v.total, 0)
+  const totalVentas = ventas.reduce(
+    (sum, v) => sum + parseFloat(v.monto_total || 0),
+    0
+  );
+  const ventasEntregadas = ventas
+    .filter((v) => v.estado_venta === "Entregada")
+    .reduce((sum, v) => sum + parseFloat(v.monto_total || 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Ventas</h1>
-          <p className="text-muted-foreground mt-2">Gestiona las ventas de equipos biomédicos</p>
+          <h1 className="text-3xl font-bold">Ventas de Equipos Biomédicos</h1>
+          <p className="text-muted-foreground mt-2">
+            Gestiona las ventas de equipos médicos a clientes
+          </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleNueva}>
           <Plus className="w-4 h-4" />
           Nueva Venta
         </Button>
       </div>
 
-      {/* Búsqueda */}
       <Card className="p-6">
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por cliente..."
-              className="pl-10"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por estado o equipo..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </Card>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Total Ventas</p>
-          <p className="text-3xl font-bold mt-2">${totalVentas.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">Total en Ventas</p>
+          <p className="text-3xl font-bold mt-2">
+            Bs. {totalVentas.toFixed(2)}
+          </p>
         </Card>
         <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Completadas</p>
-          <p className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">${ventasCompletadas.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">Ventas Entregadas</p>
+          <p className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">
+            Bs. {ventasEntregadas.toFixed(2)}
+          </p>
         </Card>
         <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Número de Transacciones</p>
+          <p className="text-sm text-muted-foreground">Número de Ventas</p>
           <p className="text-3xl font-bold mt-2">{ventas.length}</p>
         </Card>
       </div>
 
-      {/* Tabla */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-secondary/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Cliente</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Equipos</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Fecha</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Total</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Estado</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredVentas.map((venta) => (
-                <tr key={venta.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-foreground font-medium">{venta.cliente}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
-                    <div className="max-w-xs">
-                      {venta.equipos.map((equipo, idx) => (
-                        <span key={idx} className="inline-block bg-secondary/70 px-2 py-1 rounded text-xs mr-1 mb-1">
-                          {equipo}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{venta.fecha}</td>
-                  <td className="px-6 py-4 text-sm text-foreground font-medium">${venta.total.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(venta.estado)}`}>
-                      {venta.estado}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" className="w-8 h-8">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <Spinner className="w-6 h-6" />
+          </div>
+        ) : filteredVentas.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No se encontraron ventas
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-secondary/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    N°
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Cliente
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Fecha Venta
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Items
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredVentas.map((v, index) => {
+                  const detalles = detallesPorVenta[v.id_venta] || [];
+                  const cliente = clientesPorVenta[v.id_venta];
+                  return (
+                    <tr
+                      key={v.id_venta}
+                      className="hover:bg-secondary/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm font-medium">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        {cliente?.nombre_institucion ||
+                          `Cliente #${v.id_cliente}`}
+                      </td>
+                      <td className="px-6 py-4 text-sm">{v.fecha_venta}</td>
+                      <td className="px-6 py-4 text-sm">{detalles.length}</td>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        Bs. {parseFloat(v.monto_total || 0).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(
+                            v.estado_venta
+                          )}`}
+                        >
+                          {v.estado_venta}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8"
+                            onClick={() => handleVer(v)}
+                            title="Ver detalles"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8"
+                            onClick={() => handleEditar(v)}
+                            title="Editar"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8 text-destructive"
+                            onClick={() => handleEliminar(v)}
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
-  )
+  );
 }

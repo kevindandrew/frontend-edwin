@@ -9,10 +9,6 @@ const useFetch = (baseURL) => {
       const cookies = document.cookie.split("; ");
       const tokenCookie = cookies.find((row) => row.startsWith("token="));
       const token = tokenCookie ? tokenCookie.split("=")[1] : null;
-      console.log("🔑 Token encontrado:", token ? "Sí" : "No");
-      if (token) {
-        console.log("Token:", token.substring(0, 20) + "...");
-      }
       return token;
     }
     return null;
@@ -27,9 +23,6 @@ const useFetch = (baseURL) => {
         const token = getToken();
         const url = `${baseURL}${endpoint}`;
 
-        console.log("🌐 Haciendo petición a:", url);
-        console.log("📦 Método:", method);
-
         const headers = {
           "Content-Type": "application/json",
           ...customHeaders,
@@ -37,9 +30,6 @@ const useFetch = (baseURL) => {
 
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
-          console.log("✅ Token agregado al header");
-        } else {
-          console.warn("⚠️ No se encontró token en las cookies");
         }
 
         const config = {
@@ -54,17 +44,21 @@ const useFetch = (baseURL) => {
         const response = await fetch(url, config);
 
         if (!response.ok) {
-          const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
-          console.error("❌ Error en la petición:", errorMsg);
-          throw new Error(errorMsg);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        console.log("✅ Datos recibidos correctamente");
+        let data = null;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const text = await response.text();
+          if (text) {
+            data = JSON.parse(text);
+          }
+        }
+
         setLoading(false);
         return { data, error: null };
       } catch (err) {
-        console.error("❌ Error capturado:", err.message);
         setError(err.message);
         setLoading(false);
         return { data: null, error: err.message };
