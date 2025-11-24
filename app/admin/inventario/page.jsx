@@ -1,238 +1,280 @@
-'use client'
+"use client";
 
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Package, Search, Plus, Edit, Trash2, AlertCircle, Stethoscope } from 'lucide-react'
-import { useState } from 'react'
-
-const initialEquipos = [
-  { 
-    id: 1, 
-    nombre_equipo: 'Monitor Cardíaco Multiparámetro', 
-    modelo: 'MC-3000', 
-    numero_serie: 'SN-2024-001', 
-    fecha_adquisicion: '2024-01-15',
-    fabricante: 'Philips Healthcare',
-    categoria: 'Monitoreo',
-    riesgo: 'Clase IIb',
-    ubicacion: 'Hospital Central - Sala de UCI',
-    estado: 'Activo',
-    garantia: '24 meses'
-  },
-  { 
-    id: 2, 
-    nombre_equipo: 'Ventilador Pulmonar Invasivo', 
-    modelo: 'VP-5000', 
-    numero_serie: 'SN-2024-002', 
-    fecha_adquisicion: '2023-11-20',
-    fabricante: 'Siemens Medical',
-    categoria: 'Soporte Vital',
-    riesgo: 'Clase III',
-    ubicacion: 'Hospital Central - Sala de UCI',
-    estado: 'En Mantenimiento',
-    garantia: '36 meses'
-  },
-  { 
-    id: 3, 
-    nombre_equipo: 'Ecógrafo Ultrasónico', 
-    modelo: 'US-2000', 
-    numero_serie: 'SN-2024-003', 
-    fecha_adquisicion: '2024-02-10',
-    fabricante: 'GE Healthcare',
-    categoria: 'Diagnóstico',
-    riesgo: 'Clase II',
-    ubicacion: 'Clínica Privada - Sala de Ecografía',
-    estado: 'Activo',
-    garantia: '24 meses'
-  },
-  { 
-    id: 4, 
-    nombre_equipo: 'Desfibrilador Externo Automático', 
-    modelo: 'DEA-X200', 
-    numero_serie: 'SN-2024-004', 
-    fecha_adquisicion: '2023-08-05',
-    fabricante: 'Philips Healthcare',
-    categoria: 'Emergencia',
-    riesgo: 'Clase III',
-    ubicacion: 'Almacén Central',
-    estado: 'Disponible',
-    garantia: '60 meses'
-  },
-  { 
-    id: 5, 
-    nombre_equipo: 'Bomba de Infusión Inteligente', 
-    modelo: 'BI-700', 
-    numero_serie: 'SN-2024-005', 
-    fecha_adquisicion: '2024-03-01',
-    fabricante: 'B. Braun',
-    categoria: 'Administración',
-    riesgo: 'Clase II',
-    ubicacion: 'Hospital Central - Sala de Farmacología',
-    estado: 'Reparación',
-    garantia: '24 meses'
-  },
-]
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import useCatalogos from "@/hooks/useCatalogos";
+import useEquipos from "@/hooks/useEquipos";
+import useFetch from "@/hooks/useFetch";
+import EquiposFilters from "@/components/equipos/EquiposFilters";
+import EquiposTable from "@/components/equipos/EquiposTable";
+import NuevoEquipoFormDialog from "@/components/equipos/NuevoEquipoFormDialog";
+import EquipoViewDialog from "@/components/equipos/EquipoViewDialog";
+import DeleteEquipoDialog from "@/components/equipos/DeleteEquipoDialog";
 
 export default function InventarioPage() {
-  const [equipos, setEquipos] = useState(initialEquipos)
-  const [search, setSearch] = useState('')
+  const { toast } = useToast();
+  const catalogos = useCatalogos();
+  const { get } = useFetch("https://backend-edwin.onrender.com");
+  const {
+    equipos,
+    loading: loadingEquipos,
+    searchTerm,
+    setSearchTerm,
+    filterEstado,
+    setFilterEstado,
+    filterUbicacion,
+    setFilterUbicacion,
+    createEquipo,
+    updateEquipo,
+    deleteEquipo,
+  } = useEquipos();
 
-  const filteredEquipos = equipos.filter(equipo =>
-    equipo.nombre_equipo.toLowerCase().includes(search.toLowerCase()) ||
-    equipo.numero_serie.toLowerCase().includes(search.toLowerCase()) ||
-    equipo.fabricante.toLowerCase().includes(search.toLowerCase())
-  )
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedEquipo, setSelectedEquipo] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'Activo':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      case 'Disponible':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-      case 'En Mantenimiento':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-      case 'Reparación':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-      case 'Baja':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setFilterEstado("");
+    setFilterUbicacion("");
+  };
+
+  const handleCreate = () => {
+    setSelectedEquipo(null);
+    setIsEditing(false);
+    setFormDialogOpen(true);
+  };
+
+  const handleEdit = (equipo) => {
+    setSelectedEquipo(equipo);
+    setIsEditing(true);
+    setFormDialogOpen(true);
+  };
+
+  const handleView = async (equipo) => {
+    try {
+      let datosTecnicos = null;
+      const { data: dtData } = await get(
+        `/datos-tecnicos/equipo/${equipo.id_equipo}/`
+      );
+      if (dtData) {
+        datosTecnicos = Array.isArray(dtData) ? dtData[0] : dtData;
+      }
+
+      let fabricanteCompleto = null;
+      if (equipo.id_fabricante) {
+        const fabricanteDetalle = await catalogos.fetchFabricanteById(
+          equipo.id_fabricante
+        );
+        if (fabricanteDetalle) fabricanteCompleto = fabricanteDetalle;
+      }
+
+      setSelectedEquipo({
+        ...equipo,
+        datos_tecnicos: datosTecnicos,
+        fabricante: fabricanteCompleto || equipo.fabricante,
+      });
+      setViewDialogOpen(true);
+    } catch (error) {
+      setSelectedEquipo(equipo);
+      setViewDialogOpen(true);
     }
-  }
+  };
 
-  const getRiesgoColor = (riesgo) => {
-    switch (riesgo) {
-      case 'Clase I':
-        return 'text-green-600'
-      case 'Clase II':
-        return 'text-blue-600'
-      case 'Clase IIb':
-        return 'text-amber-600'
-      case 'Clase III':
-        return 'text-red-600'
-      default:
-        return 'text-gray-600'
+  const handleDeleteClick = (equipo) => {
+    setSelectedEquipo(equipo);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      if (isEditing) {
+        await updateEquipo(selectedEquipo.id_equipo, formData);
+        toast({
+          title: "Equipo actualizado",
+          description: "El equipo se ha actualizado correctamente.",
+        });
+      } else {
+        await createEquipo(formData);
+        toast({
+          title: "Equipo creado",
+          description: "El equipo se ha creado correctamente.",
+        });
+      }
+      setFormDialogOpen(false);
+      setSelectedEquipo(null);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "No se pudo guardar el equipo.",
+      });
     }
-  }
+  };
 
-  const equipoEnAlerta = equipos.filter(e => 
-    e.estado === 'En Mantenimiento' || e.estado === 'Reparación'
-  ).length
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteEquipo(selectedEquipo.id_equipo);
+      toast({
+        title: "Equipo eliminado",
+        description: "El equipo se ha eliminado correctamente.",
+      });
+      setDeleteDialogOpen(false);
+      setSelectedEquipo(null);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "No se pudo eliminar el equipo.",
+      });
+    }
+  };
+
+  const handleCatalogoUpdate = async (tipo, id, payload) => {
+    try {
+      let result;
+
+      // Si payload es null, es una eliminación
+      if (payload === null) {
+        switch (tipo) {
+          case "categoria":
+            await catalogos.deleteCategoria(id);
+            break;
+          case "riesgo":
+            await catalogos.deleteRiesgo(id);
+            break;
+          case "fabricante":
+            await catalogos.deleteFabricante(id);
+            break;
+          case "tecnologia":
+            await catalogos.deleteTecnologia(id);
+            break;
+        }
+        toast({
+          title: "Eliminado correctamente",
+          description: `El registro ha sido eliminado.`,
+        });
+      } else if (id) {
+        // Es una actualización
+        switch (tipo) {
+          case "categoria":
+            result = await catalogos.updateCategoria(id, payload);
+            break;
+          case "riesgo":
+            result = await catalogos.updateRiesgo(id, payload);
+            break;
+          case "fabricante":
+            result = await catalogos.updateFabricante(id, payload);
+            break;
+          case "tecnologia":
+            result = await catalogos.updateTecnologia(id, payload);
+            break;
+        }
+        toast({
+          title: "Actualizado correctamente",
+          description: `El registro ha sido actualizado.`,
+        });
+      } else {
+        // Es una creación
+        switch (tipo) {
+          case "categoria":
+            result = await catalogos.createCategoria(payload);
+            break;
+          case "riesgo":
+            result = await catalogos.createRiesgo(payload);
+            break;
+          case "fabricante":
+            result = await catalogos.createFabricante(payload);
+            break;
+          case "tecnologia":
+            result = await catalogos.createTecnologia(payload);
+            break;
+        }
+        toast({
+          title: "Creado correctamente",
+          description: `El registro ha sido creado.`,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "No se pudo realizar la operación.",
+      });
+      throw error;
+    }
+  };
+
+  if (catalogos.loading || loadingEquipos) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Stethoscope className="w-8 h-8" />
-            Inventario Biomédico
-          </h1>
-          <p className="text-muted-foreground mt-2">Gestiona equipos biomédicos y su disponibilidad</p>
+          <h1 className="text-3xl font-bold">Inventario de Equipos</h1>
+          <p className="text-muted-foreground">Gestión de equipos biomédicos</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
+        <Button onClick={handleCreate}>
+          <Plus className="h-4 w-4 mr-2" />
           Nuevo Equipo
         </Button>
       </div>
 
-      {/* Búsqueda */}
-      <Card className="p-6">
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre, serie o fabricante..."
-              className="pl-10"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-      </Card>
+      <EquiposFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterEstado={filterEstado}
+        setFilterEstado={setFilterEstado}
+        filterUbicacion={filterUbicacion}
+        setFilterUbicacion={setFilterUbicacion}
+        catalogos={catalogos}
+        onClearFilters={handleClearFilters}
+      />
 
-      {/* Alertas */}
-      {equipoEnAlerta > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-amber-900 dark:text-amber-100">Equipos en Mantenimiento</p>
-            <p className="text-sm text-amber-800 dark:text-amber-200">{equipoEnAlerta} equipo(s) requieren atención</p>
-          </div>
-        </div>
-      )}
+      <EquiposTable
+        equipos={equipos}
+        catalogos={catalogos}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+      />
 
-      {/* Tabla */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-secondary/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Equipo</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Modelo / Serie</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Fabricante</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Ubicación</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Riesgo</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Estado</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredEquipos.map((equipo) => (
-                <tr key={equipo.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-foreground">{equipo.nombre_equipo}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
-                    <div className="font-mono">{equipo.modelo}</div>
-                    <div className="text-xs text-muted-foreground">{equipo.numero_serie}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-foreground">{equipo.fabricante}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground text-xs">{equipo.ubicacion}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`font-semibold ${getRiesgoColor(equipo.riesgo)}`}>
-                      {equipo.riesgo}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(equipo.estado)}`}>
-                      {equipo.estado}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" className="w-8 h-8">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <NuevoEquipoFormDialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        equipo={selectedEquipo}
+        catalogos={catalogos}
+        onSubmit={handleFormSubmit}
+        isEditing={isEditing}
+        onCatalogoUpdate={handleCatalogoUpdate}
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Total Equipos</p>
-          <p className="text-3xl font-bold mt-2">{equipos.length}</p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Activos</p>
-          <p className="text-3xl font-bold mt-2 text-green-600">{equipos.filter(e => e.estado === 'Activo').length}</p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground">En Servicio</p>
-          <p className="text-3xl font-bold mt-2 text-blue-600">{equipos.filter(e => e.estado === 'Disponible').length}</p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Requieren Atención</p>
-          <p className="text-3xl font-bold mt-2 text-amber-600">{equipoEnAlerta}</p>
-        </Card>
-      </div>
+      <EquipoViewDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        equipo={selectedEquipo}
+        catalogos={catalogos}
+      />
+
+      <DeleteEquipoDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        equipoName={selectedEquipo?.nombre_equipo}
+      />
     </div>
-  )
+  );
 }

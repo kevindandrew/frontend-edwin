@@ -41,12 +41,9 @@ export const useDashboardData = () => {
         const cookies = document.cookie.split("; ");
         const tokenCookie = cookies.find((row) => row.startsWith("token="));
         if (!tokenCookie) {
-          console.error("❌ No se encontró el token en las cookies");
-          console.log("Cookies disponibles:", document.cookie);
           setAuthError(true);
           return false;
         }
-        console.log("✅ Token encontrado en cookies");
         return true;
       }
       return false;
