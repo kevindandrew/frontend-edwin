@@ -37,27 +37,8 @@ export default function ConsultaPage() {
   } = useEquipos();
   const catalogos = useCatalogos();
 
-  const [filteredEquipos, setFilteredEquipos] = useState([]);
-
-  useEffect(() => {
-    if (equipos) {
-      let result = equipos;
-
-      // Filtro local adicional si es necesario (aunque el hook ya filtra por API algunos campos)
-      // Aquí aseguramos que el término de búsqueda se aplique en cliente si el hook no lo hace completamente
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        result = result.filter(
-          (e) =>
-            e.nombre_equipo.toLowerCase().includes(term) ||
-            e.modelo?.toLowerCase().includes(term) ||
-            e.numero_serie?.toLowerCase().includes(term)
-        );
-      }
-
-      setFilteredEquipos(result);
-    }
-  }, [equipos, searchTerm]);
+  // El hook useEquipos ya maneja el filtrado y la búsqueda
+  const filteredEquipos = equipos;
 
   const estadoColors = {
     "En Uso": "default",

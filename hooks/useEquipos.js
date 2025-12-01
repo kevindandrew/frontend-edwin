@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import useFetch from "./useFetch";
 
 export default function useEquipos() {
@@ -120,16 +120,18 @@ export default function useEquipos() {
     }
   };
 
-  const filteredEquipos = equipos
-    .filter(
-      (equipo) =>
-        equipo.nombre_equipo
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        equipo.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equipo.numero_serie?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => a.id_equipo - b.id_equipo);
+  const filteredEquipos = useMemo(() => {
+    return equipos
+      .filter(
+        (equipo) =>
+          equipo.nombre_equipo
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          equipo.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          equipo.numero_serie?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => a.id_equipo - b.id_equipo);
+  }, [equipos, searchTerm]);
 
   return {
     equipos: filteredEquipos,
