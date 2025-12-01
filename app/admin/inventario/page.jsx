@@ -8,11 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import useCatalogos from "@/hooks/useCatalogos";
 import useEquipos from "@/hooks/useEquipos";
 import useFetch from "@/hooks/useFetch";
-import EquiposFilters from "@/components/equipos/EquiposFilters";
-import EquiposTable from "@/components/equipos/EquiposTable";
-import NuevoEquipoFormDialog from "@/components/equipos/NuevoEquipoFormDialog";
-import EquipoViewDialog from "@/components/equipos/EquipoViewDialog";
-import DeleteEquipoDialog from "@/components/equipos/DeleteEquipoDialog";
+import EquiposFilters from "./_components/EquiposFilters";
+import EquiposTable from "./_components/EquiposTable";
+import NuevoEquipoFormDialog from "./_components/NuevoEquipoFormDialog";
+import EquipoViewDialog from "./_components/EquipoViewDialog";
+import DeleteEquipoDialog from "./_components/DeleteEquipoDialog";
 
 export default function InventarioPage() {
   const { toast } = useToast();

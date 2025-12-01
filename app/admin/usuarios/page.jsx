@@ -5,10 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useUsuarios } from "@/hooks/useUsuarios";
-import { SearchBar } from "@/components/usuarios/SearchBar";
-import { UsuariosTable } from "@/components/usuarios/UsuariosTable";
-import { UsuarioFormDialog } from "@/components/usuarios/UsuarioFormDialog";
-import { DeleteConfirmDialog } from "@/components/usuarios/DeleteConfirmDialog";
+import { SearchBar } from "./_components/SearchBar";
+import { UsuariosTable } from "./_components/UsuariosTable";
+import { UsuarioFormDialog } from "./_components/UsuarioFormDialog";
+import { DeleteConfirmDialog } from "./_components/DeleteConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function UsuariosPage() {

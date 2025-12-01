@@ -3,18 +3,26 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, AlertCircle } from "lucide-react";
+import {
+  Search,
+  Plus,
+  AlertCircle,
+  Calendar as CalendarIcon,
+  List,
+} from "lucide-react";
 import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useMantenimientos from "@/hooks/useMantenimientos";
 import useEquipos from "@/hooks/useEquipos";
 import useRepuestos from "@/hooks/useRepuestos";
 import useTecnicos from "@/hooks/useTecnicos";
 import useClientes from "@/hooks/useClientes";
-import MantenimientosTable from "@/components/mantenimiento/MantenimientosTable";
-import NuevoMantenimientoDialog from "@/components/mantenimiento/NuevoMantenimientoDialog";
-import DeleteMantenimientoDialog from "@/components/mantenimiento/DeleteMantenimientoDialog";
-import MantenimientoViewDialog from "@/components/mantenimiento/MantenimientoViewDialog";
-import RepuestosUsadosDialog from "@/components/mantenimiento/RepuestosUsadosDialog";
+import MantenimientosTable from "./_components/MantenimientosTable";
+import MantenimientoCalendar from "./_components/MantenimientoCalendar";
+import NuevoMantenimientoDialog from "./_components/NuevoMantenimientoDialog";
+import DeleteMantenimientoDialog from "./_components/DeleteMantenimientoDialog";
+import MantenimientoViewDialog from "./_components/MantenimientoViewDialog";
+import RepuestosUsadosDialog from "./_components/RepuestosUsadosDialog";
 
 export default function MantenimientoPage() {
   const {
@@ -256,47 +264,6 @@ export default function MantenimientoPage() {
         </Button>
       </div>
 
-      <Card className="p-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por equipo..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </Card>
-
-      {pendientes > 0 && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-red-900 dark:text-red-300">
-              Mantenimiento Pendiente
-            </p>
-            <p className="text-sm text-red-800 dark:text-red-200">
-              {pendientes}{" "}
-              {pendientes === 1 ? "equipo requiere" : "equipos requieren"}{" "}
-              mantenimiento urgente
-            </p>
-          </div>
-        </div>
-      )}
-
-      <Card className="overflow-hidden">
-        <MantenimientosTable
-          mantenimientos={filteredMantenimientos}
-          loading={loading}
-          equipos={equipos}
-          repuestosPorMantenimiento={repuestosPorMantenimiento}
-          onVer={handleVer}
-          onEditar={handleEditar}
-          onEliminar={handleEliminar}
-          onVerRepuestos={handleVerRepuestos}
-        />
-      </Card>
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-6">
           <p className="text-sm text-muted-foreground">Total Registros</p>
@@ -327,6 +294,69 @@ export default function MantenimientoPage() {
           </p>
         </Card>
       </div>
+
+      {pendientes > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-red-900 dark:text-red-300">
+              Mantenimiento Pendiente
+            </p>
+            <p className="text-sm text-red-800 dark:text-red-200">
+              {pendientes}{" "}
+              {pendientes === 1 ? "equipo requiere" : "equipos requieren"}{" "}
+              mantenimiento urgente
+            </p>
+          </div>
+        </div>
+      )}
+
+      <Tabs defaultValue="lista" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="lista" className="gap-2">
+            <List className="w-4 h-4" />
+            Vista de Lista
+          </TabsTrigger>
+          <TabsTrigger value="calendario" className="gap-2">
+            <CalendarIcon className="w-4 h-4" />
+            Calendario
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="lista" className="space-y-4 mt-4">
+          <Card className="p-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por equipo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden">
+            <MantenimientosTable
+              mantenimientos={filteredMantenimientos}
+              loading={loading}
+              equipos={equipos}
+              repuestosPorMantenimiento={repuestosPorMantenimiento}
+              onVer={handleVer}
+              onEditar={handleEditar}
+              onEliminar={handleEliminar}
+              onVerRepuestos={handleVerRepuestos}
+            />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="calendario" className="mt-4">
+          <MantenimientoCalendar
+            mantenimientos={mantenimientos}
+            onSelectMantenimiento={handleVer}
+          />
+        </TabsContent>
+      </Tabs>
 
       <NuevoMantenimientoDialog
         open={dialogOpen}

@@ -1,13 +1,16 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import useAuditoria from "@/hooks/useAuditoria";
 import useTecnicos from "@/hooks/useTecnicos";
-import AuditoriaFilters from "@/components/auditoria/AuditoriaFilters";
-import AuditoriaTable from "@/components/auditoria/AuditoriaTable";
-import AuditoriaDialog from "@/components/auditoria/AuditoriaDialog";
+import AuditoriaFilters from "./_components/AuditoriaFilters";
+import AuditoriaTable from "./_components/AuditoriaTable";
+import AuditoriaDialog from "./_components/AuditoriaDialog";
+import { generarPDFAuditoria } from "@/app/admin/reportes/_components/generarPDFReportes";
 
 export default function AuditoriaPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +35,10 @@ export default function AuditoriaPage() {
 
   const { tecnicos } = useTecnicos();
 
+  useEffect(() => {
+    fetchAuditorias();
+  }, []);
+
   const handleLimpiarFiltros = () => {
     setFiltroTabla(undefined);
     setFiltroOperacion(undefined);
@@ -39,6 +46,7 @@ export default function AuditoriaPage() {
     setFechaInicio("");
     setFechaFin("");
     setSearchTerm("");
+    fetchAuditorias();
   };
 
   const handleAplicarFiltros = async () => {
@@ -63,6 +71,10 @@ export default function AuditoriaPage() {
       : true
   );
 
+  const handleExportarPDF = () => {
+    generarPDFAuditoria(filteredAuditorias);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -73,11 +85,17 @@ export default function AuditoriaPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Auditoría del Sistema</h1>
-        <p className="text-muted-foreground mt-2">
-          Registro de todas las operaciones realizadas en el sistema
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Auditoría del Sistema</h1>
+          <p className="text-muted-foreground mt-2">
+            Registro de todas las operaciones realizadas en el sistema
+          </p>
+        </div>
+        <Button onClick={handleExportarPDF} className="gap-2">
+          <Download className="w-4 h-4" />
+          Exportar PDF
+        </Button>
       </div>
 
       <AuditoriaFilters
@@ -106,10 +124,7 @@ export default function AuditoriaPage() {
 
       {!loading && auditorias.length === 0 && !error && (
         <Alert>
-          <p>
-            Aplica los filtros y haz clic en "Aplicar" para buscar registros de
-            auditoría.
-          </p>
+          <p>No se encontraron registros de auditoría.</p>
         </Alert>
       )}
 

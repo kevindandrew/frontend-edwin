@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import Cookies from "js-cookie";
+import NotificationsPopover from "@/components/admin/NotificationsPopover";
+import { Suspense } from "react";
+import Loading from "./loading";
 
 const menuItems = [
   { name: "Inicio", href: "/admin", icon: Home },
@@ -41,6 +45,33 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  useEffect(() => {
+    const token = Cookies.get("token");
+    const userStr = Cookies.get("user");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        // Si es técnico (rol 2), redirigir a su panel
+        if (user.id_rol === 2) {
+          router.push("/tecnico");
+        }
+        // Si es gestor (rol 3), redirigir a su panel
+        if (user.id_rol === 3) {
+          router.push("/gestor");
+        }
+        // Aquí se podrían agregar más validaciones para otros roles
+      } catch (e) {
+        console.error("Error parsing user cookie", e);
+      }
+    }
+  }, [router]);
+
   const isActive = (href) => {
     if (href === "/admin" && pathname === "/admin") return true;
     if (href !== "/admin" && pathname.startsWith(href)) return true;
@@ -49,7 +80,7 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    Cookies.remove("token", { path: "/" });
     router.push("/login");
   };
 
@@ -120,27 +151,32 @@ export default function AdminLayout({ children }) {
       >
         {/* Top Bar */}
         <header className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-30">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-foreground"
-          >
-            {sidebarOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </Button>
-          <div className="text-foreground font-semibold">
-            Dashboard de Administración
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-foreground"
+            >
+              {sidebarOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </Button>
+            <div className="text-foreground font-semibold">
+              Dashboard de Administración
+            </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <NotificationsPopover />
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-6 bg-background">
-          {children}
+          <Suspense fallback={<Loading />}>{children}</Suspense>
         </main>
       </div>
     </div>

@@ -1,6 +1,3 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
 const MESES = [
   "Enero",
   "Febrero",
@@ -14,7 +11,16 @@ const MESES = [
   "Octubre",
   "Noviembre",
   "Diciembre",
+  "Enero (Prox)",
+  "Febrero (Prox)",
 ];
+
+// Función auxiliar para cargar librerías
+const loadPDFLibs = async () => {
+  const jsPDF = (await import("jspdf")).default;
+  const autoTable = (await import("jspdf-autotable")).default;
+  return { jsPDF, autoTable };
+};
 
 // Función auxiliar para agregar encabezado
 const agregarEncabezado = async (doc, titulo) => {
@@ -76,6 +82,7 @@ const agregarPiePagina = (doc) => {
 
 // PDF de Dashboard General
 export const generarPDFDashboard = async (dashboard) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, "REPORTE DE DASHBOARD GENERAL");
 
@@ -141,6 +148,7 @@ export const generarPDFDashboard = async (dashboard) => {
 
 // PDF de Equipos por Categoría
 export const generarPDFEquipos = async (equiposPorCategoria, dashboard) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, "REPORTE DE EQUIPOS POR CATEGORÍA");
 
@@ -186,6 +194,7 @@ export const generarPDFEquipos = async (equiposPorCategoria, dashboard) => {
 
 // PDF de Ventas por Mes
 export const generarPDFVentas = async (ventasPorMes, año) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, `REPORTE DE VENTAS - AÑO ${año}`);
 
@@ -253,6 +262,7 @@ export const generarPDFVentas = async (ventasPorMes, año) => {
 
 // PDF de Compras por Mes
 export const generarPDFCompras = async (comprasPorMes, año) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, `REPORTE DE COMPRAS - AÑO ${año}`);
 
@@ -326,6 +336,7 @@ export const generarPDFRepuestos = async (
   repuestosMasUsados,
   repuestosStockBajo
 ) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, "REPORTE DE REPUESTOS");
 
@@ -379,6 +390,7 @@ export const generarPDFRepuestos = async (
 
 // PDF de Top Clientes
 export const generarPDFClientes = async (topClientes) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, "REPORTE DE TOP CLIENTES");
 
@@ -425,6 +437,166 @@ export const generarPDFClientes = async (topClientes) => {
   doc.save(`Top_Clientes_${new Date().toISOString().split("T")[0]}.pdf`);
 };
 
+// PDF de Proyecciones de Mantenimiento
+export const generarPDFProyecciones = async (proyecciones) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
+  const doc = new jsPDF();
+  await agregarEncabezado(doc, "REPORTE DE PROYECCIONES DE MANTENIMIENTO");
+
+  let yPos = 45;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(
+    `Total de Mantenimientos Programados: ${proyecciones.length}`,
+    14,
+    yPos
+  );
+  yPos += 10;
+
+  if (proyecciones && proyecciones.length > 0) {
+    const data = proyecciones.map((m) => [
+      m.fecha_programada,
+      m.equipo_nombre || "N/A",
+      m.tipo_mantenimiento,
+      m.tecnico_nombre || "Sin asignar",
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Fecha", "Equipo", "Tipo", "Técnico"]],
+      body: data,
+      theme: "striped",
+      headStyles: { fillColor: [243, 156, 18] },
+    });
+  } else {
+    doc.text("No hay mantenimientos futuros programados", 14, yPos);
+  }
+
+  agregarPiePagina(doc);
+  doc.save(
+    `Proyecciones_Mantenimiento_${new Date().toISOString().split("T")[0]}.pdf`
+  );
+};
+
+// PDF de Equipos Críticos
+export const generarPDFEquiposCriticos = async (equiposCriticos) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
+  const doc = new jsPDF();
+  await agregarEncabezado(doc, "REPORTE DE EQUIPOS CRÍTICOS");
+
+  let yPos = 45;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Total de Equipos Críticos: ${equiposCriticos.length}`, 14, yPos);
+  yPos += 10;
+
+  if (equiposCriticos && equiposCriticos.length > 0) {
+    const data = equiposCriticos.map((e) => [
+      e.nombre_equipo,
+      e.marca || "N/A",
+      e.modelo || "N/A",
+      e.estado,
+      e.ubicacion || "N/A",
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Equipo", "Marca", "Modelo", "Estado", "Ubicación"]],
+      body: data,
+      theme: "striped",
+      headStyles: { fillColor: [192, 57, 43] },
+    });
+  } else {
+    doc.text("No se encontraron equipos críticos", 14, yPos);
+  }
+
+  agregarPiePagina(doc);
+  doc.save(`Equipos_Criticos_${new Date().toISOString().split("T")[0]}.pdf`);
+};
+
+// PDF de Lista de Usuarios
+export const generarPDFUsuarios = async (usuarios) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
+  const doc = new jsPDF();
+  await agregarEncabezado(doc, "REPORTE DE USUARIOS DEL SISTEMA");
+
+  let yPos = 45;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Total de Usuarios: ${usuarios.length}`, 14, yPos);
+  yPos += 10;
+
+  if (usuarios && usuarios.length > 0) {
+    const data = usuarios.map((u) => [
+      u.nombre_completo,
+      u.username,
+      u.rol?.nombre_rol || "N/A",
+      u.email || "N/A",
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Nombre Completo", "Usuario", "Rol", "Email"]],
+      body: data,
+      theme: "striped",
+      headStyles: { fillColor: [44, 62, 80] },
+    });
+  } else {
+    doc.text("No hay usuarios registrados", 14, yPos);
+  }
+
+  agregarPiePagina(doc);
+  doc.save(`Lista_Usuarios_${new Date().toISOString().split("T")[0]}.pdf`);
+};
+
+// PDF de Auditoría
+export const generarPDFAuditoria = async (auditorias) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
+  const doc = new jsPDF();
+  await agregarEncabezado(doc, "REPORTE DE AUDITORÍA DEL SISTEMA");
+
+  let yPos = 45;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Total de Registros: ${auditorias.length}`, 14, yPos);
+  yPos += 10;
+
+  if (auditorias && auditorias.length > 0) {
+    const data = auditorias.map((a) => [
+      new Date(a.fecha_operacion).toLocaleString(),
+      a.usuario_nombre || a.id_usuario,
+      a.operacion,
+      a.tabla,
+      a.detalles ? JSON.stringify(a.detalles).substring(0, 50) + "..." : "N/A",
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Fecha", "Usuario", "Operación", "Tabla", "Detalles"]],
+      body: data,
+      theme: "striped",
+      headStyles: { fillColor: [52, 73, 94] },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 60 },
+      },
+      styles: { fontSize: 8 },
+    });
+  } else {
+    doc.text("No hay registros de auditoría para mostrar", 14, yPos);
+  }
+
+  agregarPiePagina(doc);
+  doc.save(`Auditoria_${new Date().toISOString().split("T")[0]}.pdf`);
+};
+
 // PDF Completo con todos los reportes
 export const generarPDFCompleto = async (
   dashboard,
@@ -433,8 +605,12 @@ export const generarPDFCompleto = async (
   comprasPorMes,
   repuestosMasUsados,
   topClientes,
-  año
+  año,
+  proyecciones = [],
+  equiposCriticos = [],
+  usuarios = []
 ) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
 
   // Página 1: Dashboard
@@ -525,6 +701,76 @@ export const generarPDFCompleto = async (
       startY: yPos,
       head: [["#", "Cliente", "Monto Total"]],
       body: clientesData,
+      theme: "grid",
+    });
+  }
+
+  // Nueva página: Proyecciones
+  if (proyecciones.length > 0) {
+    doc.addPage();
+    yPos = 20;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("5. Proyecciones de Mantenimiento", 14, yPos);
+    yPos += 8;
+
+    const proyeccionesData = proyecciones.map((m) => [
+      m.fecha_programada,
+      m.equipo_nombre || "N/A",
+      m.tipo_mantenimiento,
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Fecha", "Equipo", "Tipo"]],
+      body: proyeccionesData,
+      theme: "grid",
+    });
+  }
+
+  // Nueva página: Equipos Críticos
+  if (equiposCriticos.length > 0) {
+    doc.addPage();
+    yPos = 20;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("6. Equipos Críticos", 14, yPos);
+    yPos += 8;
+
+    const criticosData = equiposCriticos.map((e) => [
+      e.nombre_equipo,
+      e.estado,
+      e.ubicacion || "N/A",
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Equipo", "Estado", "Ubicación"]],
+      body: criticosData,
+      theme: "grid",
+      headStyles: { fillColor: [192, 57, 43] },
+    });
+  }
+
+  // Nueva página: Usuarios
+  if (usuarios.length > 0) {
+    doc.addPage();
+    yPos = 20;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("7. Usuarios del Sistema", 14, yPos);
+    yPos += 8;
+
+    const usuariosData = usuarios.map((u) => [
+      u.nombre_completo,
+      u.username,
+      u.rol?.nombre_rol || "N/A",
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Nombre", "Usuario", "Rol"]],
+      body: usuariosData,
       theme: "grid",
     });
   }

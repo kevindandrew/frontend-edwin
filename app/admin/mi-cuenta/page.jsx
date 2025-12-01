@@ -1,12 +1,11 @@
 "use client";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import useMiCuenta from "@/hooks/useMiCuenta";
 import useMiCuentaForm from "@/hooks/useMiCuentaForm";
-import InfoPersonalView from "@/components/mi-cuenta/InfoPersonalView";
-import EditarCuentaForm from "@/components/mi-cuenta/EditarCuentaForm";
-import RolCard from "@/components/mi-cuenta/RolCard";
+import InfoPersonalView from "./_components/InfoPersonalView";
+import EditarCuentaForm from "./_components/EditarCuentaForm";
+import RolCard from "./_components/RolCard";
 
 export default function MiCuentaPage() {
   const { usuario, loading, error, updateMiCuenta } = useMiCuenta();

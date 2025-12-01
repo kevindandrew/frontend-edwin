@@ -43,6 +43,28 @@ export default function MantenimientosTable({
     return colors[estado] || "bg-gray-100 text-gray-700";
   };
 
+  const getPriority = (mantenimiento) => {
+    if (mantenimiento.fecha_realizacion)
+      return { label: "Completado", color: "bg-gray-100 text-gray-600" };
+
+    const fechaProgramada = new Date(mantenimiento.fecha_programada);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    fechaProgramada.setHours(0, 0, 0, 0);
+
+    if (fechaProgramada < hoy)
+      return { label: "Alta", color: "bg-red-100 text-red-700 border-red-200" };
+    if (fechaProgramada.getTime() === hoy.getTime())
+      return {
+        label: "Media",
+        color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      };
+    return {
+      label: "Baja",
+      color: "bg-blue-100 text-blue-700 border-blue-200",
+    };
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -73,6 +95,9 @@ export default function MantenimientosTable({
               Fecha Programada
             </th>
             <th className="px-6 py-3 text-left text-sm font-semibold">
+              Prioridad
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold">
               Fecha Realización
             </th>
             <th className="px-6 py-3 text-left text-sm font-semibold">Costo</th>
@@ -90,6 +115,7 @@ export default function MantenimientosTable({
         <tbody className="divide-y divide-border">
           {mantenimientos.map((m) => {
             const estado = calcularEstado(m);
+            const priority = getPriority(m);
             const repuestosUsados =
               repuestosPorMantenimiento[m.id_mantenimiento] || [];
 
@@ -109,6 +135,14 @@ export default function MantenimientosTable({
                 </td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">
                   {m.fecha_programada}
+                </td>
+                <td className="px-6 py-4 text-sm">
+                  <Badge
+                    variant="outline"
+                    className={`${priority.color} border`}
+                  >
+                    {priority.label}
+                  </Badge>
                 </td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">
                   {m.fecha_realizacion || "-"}

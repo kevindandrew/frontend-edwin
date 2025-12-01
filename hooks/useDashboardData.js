@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import useFetch from "@/hooks/useFetch";
+import Cookies from "js-cookie";
 
 const MESES = [
   "Ene",
@@ -37,16 +38,12 @@ export const useDashboardData = () => {
   useEffect(() => {
     // Verificar si existe el token antes de hacer las peticiones
     const checkToken = () => {
-      if (typeof document !== "undefined") {
-        const cookies = document.cookie.split("; ");
-        const tokenCookie = cookies.find((row) => row.startsWith("token="));
-        if (!tokenCookie) {
-          setAuthError(true);
-          return false;
-        }
-        return true;
+      const token = Cookies.get("token");
+      if (!token) {
+        setAuthError(true);
+        return false;
       }
-      return false;
+      return true;
     };
 
     const fetchData = async () => {

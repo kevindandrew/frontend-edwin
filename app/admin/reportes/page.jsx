@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,8 +23,13 @@ import {
   Calendar,
   Download,
   RefreshCw,
+  AlertTriangle,
+  UserCheck,
 } from "lucide-react";
 import useEstadisticas from "@/hooks/useEstadisticas";
+import useEquipos from "@/hooks/useEquipos";
+import useMantenimientos from "@/hooks/useMantenimientos";
+import { useUsuarios } from "@/hooks/useUsuarios";
 import {
   generarPDFDashboard,
   generarPDFEquipos,
@@ -33,7 +38,10 @@ import {
   generarPDFRepuestos,
   generarPDFClientes,
   generarPDFCompleto,
-} from "@/components/reportes/generarPDFReportes";
+  generarPDFProyecciones,
+  generarPDFEquiposCriticos,
+  generarPDFUsuarios,
+} from "./_components/generarPDFReportes";
 
 const MESES = [
   "Ene",
@@ -54,6 +62,7 @@ export default function ReportesPage() {
   const [añoSeleccionado, setAñoSeleccionado] = useState(
     new Date().getFullYear()
   );
+
   const {
     dashboard,
     equiposPorCategoria,
@@ -61,11 +70,21 @@ export default function ReportesPage() {
     comprasPorMes,
     repuestosMasUsados,
     topClientes,
-    loading,
+    loading: loadingStats,
     fetchVentasPorMes,
     fetchComprasPorMes,
     fetchAllStats,
   } = useEstadisticas();
+
+  const { equipos, refreshEquipos } = useEquipos();
+  const { mantenimientos, fetchMantenimientos } = useMantenimientos();
+  const { usuarios, refreshUsuarios } = useUsuarios();
+
+  useEffect(() => {
+    refreshEquipos();
+    fetchMantenimientos();
+    refreshUsuarios();
+  }, []);
 
   const handleAñoChange = async (año) => {
     setAñoSeleccionado(parseInt(año));
@@ -75,7 +94,36 @@ export default function ReportesPage() {
 
   const handleRefresh = async () => {
     await fetchAllStats();
+    await refreshEquipos();
+    await fetchMantenimientos();
+    await refreshUsuarios();
   };
+
+  // Logic for new reports
+  const getProyecciones = () => {
+    const hoy = new Date();
+    return mantenimientos
+      .filter((m) => new Date(m.fecha_programada) > hoy && !m.fecha_realizacion)
+      .sort(
+        (a, b) => new Date(a.fecha_programada) - new Date(b.fecha_programada)
+      )
+      .map((m) => ({
+        ...m,
+        equipo_nombre:
+          equipos.find((e) => e.id_equipo === m.id_equipo)?.nombre_equipo ||
+          "N/A",
+        tecnico_nombre: m.tecnico?.nombre_completo || "Sin asignar",
+      }));
+  };
+
+  const getEquiposCriticos = () => {
+    // Define critical status
+    const criticalStatuses = ["Malo", "En Reparación", "Fuera de Servicio"];
+    return equipos.filter((e) => criticalStatuses.includes(e.estado));
+  };
+
+  const proyecciones = getProyecciones();
+  const equiposCriticos = getEquiposCriticos();
 
   const handleGenerarPDFCompleto = () => {
     generarPDFCompleto(
@@ -85,11 +133,14 @@ export default function ReportesPage() {
       comprasPorMes,
       repuestosMasUsados,
       topClientes,
-      añoSeleccionado
+      añoSeleccionado,
+      proyecciones,
+      equiposCriticos,
+      usuarios
     );
   };
 
-  if (loading) {
+  if (loadingStats) {
     return (
       <div className="flex justify-center items-center h-96">
         <Spinner className="w-8 h-8" />
@@ -196,12 +247,24 @@ export default function ReportesPage() {
       </div>
 
       <Tabs defaultValue="equipos" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex flex-wrap h-auto gap-2">
           <TabsTrigger value="equipos">Equipos</TabsTrigger>
           <TabsTrigger value="ventas">Ventas</TabsTrigger>
           <TabsTrigger value="compras">Compras</TabsTrigger>
           <TabsTrigger value="repuestos">Repuestos</TabsTrigger>
           <TabsTrigger value="clientes">Clientes</TabsTrigger>
+          <TabsTrigger value="proyecciones" className="gap-2">
+            <Calendar className="w-4 h-4" />
+            Proyecciones
+          </TabsTrigger>
+          <TabsTrigger value="criticos" className="gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Críticos
+          </TabsTrigger>
+          <TabsTrigger value="usuarios" className="gap-2">
+            <UserCheck className="w-4 h-4" />
+            Usuarios
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab Equipos */}
@@ -528,6 +591,147 @@ export default function ReportesPage() {
               {(!topClientes || topClientes.length === 0) && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No hay datos disponibles
+                </p>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Proyecciones */}
+        <TabsContent value="proyecciones" className="space-y-4">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                Proyecciones de Mantenimiento
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generarPDFProyecciones(proyecciones)}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Descargar PDF
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {proyecciones.length > 0 ? (
+                proyecciones.map((m, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{m.equipo_nombre}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {m.tipo_mantenimiento}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{m.fecha_programada}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {m.tecnico_nombre}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay mantenimientos futuros programados
+                </p>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Equipos Críticos */}
+        <TabsContent value="criticos" className="space-y-4">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Equipos Críticos</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generarPDFEquiposCriticos(equiposCriticos)}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Descargar PDF
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {equiposCriticos.length > 0 ? (
+                equiposCriticos.map((e, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{e.nombre_equipo}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {e.marca} - {e.modelo}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        {e.estado}
+                      </span>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {e.ubicacion}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No se encontraron equipos críticos
+                </p>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Usuarios */}
+        <TabsContent value="usuarios" className="space-y-4">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Lista de Usuarios</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generarPDFUsuarios(usuarios)}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Descargar PDF
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {usuarios.length > 0 ? (
+                usuarios.map((u, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{u.nombre_completo}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {u.username}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                        {u.rol?.nombre_rol || "N/A"}
+                      </span>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {u.email || "Sin email"}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay usuarios registrados
                 </p>
               )}
             </div>

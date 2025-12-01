@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Eye, EyeOff } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
+import Cookies from "js-cookie";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,24 +64,44 @@ export default function LoginPage() {
       if (data.access_token) {
         const expires = new Date();
         expires.setDate(expires.getDate() + 30);
-        document.cookie = `token=${
-          data.access_token
-        }; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+        Cookies.set("token", data.access_token, {
+          expires: 30,
+          path: "/",
+          sameSite: "Lax",
+        });
 
         if (data.usuario) {
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              id: data.usuario.id_usuario,
-              username: data.usuario.nombre_usuario,
-              fullName: data.usuario.nombre_completo,
-              role: data.usuario.rol?.nombre_rol || "user",
-              roleId: data.usuario.rol?.id_rol,
-            })
-          );
-        }
+          const userData = {
+            id_usuario: data.usuario.id_usuario,
+            username: data.usuario.nombre_usuario,
+            nombre_completo: data.usuario.nombre_completo,
+            email: data.usuario.email,
+            id_rol: data.usuario.rol?.id_rol,
+            rol: data.usuario.rol?.nombre_rol,
+            avatar: data.usuario.avatar,
+          };
 
-        router.push("/admin");
+          // Guardar en Cookies para acceso desde layouts
+          Cookies.set("user", JSON.stringify(userData), {
+            expires: 30,
+            path: "/",
+            sameSite: "Lax",
+          });
+
+          // Mantener localStorage por compatibilidad si es necesario
+          localStorage.setItem("user", JSON.stringify(userData));
+
+          // Redirección basada en rol
+          if (userData.id_rol === 2) {
+            router.push("/tecnico");
+          } else if (userData.id_rol === 3) {
+            router.push("/gestor");
+          } else {
+            router.push("/admin");
+          }
+        } else {
+          router.push("/admin");
+        }
       } else {
         setError("Error al obtener el token. Intenta nuevamente.");
       }

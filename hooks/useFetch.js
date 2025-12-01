@@ -1,17 +1,12 @@
 import { useState, useCallback } from "react";
+import Cookies from "js-cookie";
 
 const useFetch = (baseURL) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const getToken = () => {
-    if (typeof document !== "undefined") {
-      const cookies = document.cookie.split("; ");
-      const tokenCookie = cookies.find((row) => row.startsWith("token="));
-      const token = tokenCookie ? tokenCookie.split("=")[1] : null;
-      return token;
-    }
-    return null;
+    return Cookies.get("token");
   };
 
   const fetchData = useCallback(

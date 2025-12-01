@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Plus, Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import useRepuestos from "@/hooks/useRepuestos";
 import useCatalogos from "@/hooks/useCatalogos";
-import RepuestosTable from "@/components/repuestos/RepuestosTable";
-import NuevoRepuestoDialog from "@/components/repuestos/NuevoRepuestoDialog";
-import DeleteRepuestoDialog from "@/components/repuestos/DeleteRepuestoDialog";
+import RepuestosTable from "./_components/RepuestosTable";
+import NuevoRepuestoDialog from "./_components/NuevoRepuestoDialog";
+import DeleteRepuestoDialog from "./_components/DeleteRepuestoDialog";
 
 export default function RepuestosPage() {
   const [searchTerm, setSearchTerm] = useState("");

@@ -24,29 +24,42 @@ export default function useEquipos() {
 
     const { data, error } = await get(endpoint);
     if (data && !error) {
-      // Enriquecer equipos con datos del cliente a través de la ubicación
-      const equiposEnriquecidos = await Promise.all(
-        data.map(async (equipo) => {
+      try {
+        // Fetch all locations and clients in parallel to avoid N+1 problem
+        const [ubicacionesRes, clientesRes] = await Promise.all([
+          get("/ubicaciones/"),
+          get("/clientes/"),
+        ]);
+
+        const ubicacionesMap = new Map(
+          ubicacionesRes.data?.map((u) => [u.id_ubicacion, u]) || []
+        );
+        const clientesMap = new Map(
+          clientesRes.data?.map((c) => [c.id_cliente, c]) || []
+        );
+
+        const equiposEnriquecidos = data.map((equipo) => {
+          let ubicacion = null;
+          let cliente = null;
+
           if (equipo.id_ubicacion) {
-            const { data: ubicacionData } = await get(
-              `/ubicaciones/${equipo.id_ubicacion}/`
-            );
-            if (ubicacionData && ubicacionData.id_cliente) {
-              const { data: clienteData } = await get(
-                `/clientes/${ubicacionData.id_cliente}/`
-              );
-              return {
-                ...equipo,
-                ubicacion: ubicacionData,
-                cliente: clienteData,
-              };
+            ubicacion = ubicacionesMap.get(equipo.id_ubicacion);
+            if (ubicacion && ubicacion.id_cliente) {
+              cliente = clientesMap.get(ubicacion.id_cliente);
             }
-            return { ...equipo, ubicacion: ubicacionData };
           }
-          return equipo;
-        })
-      );
-      setEquipos(equiposEnriquecidos);
+
+          return {
+            ...equipo,
+            ubicacion,
+            cliente,
+          };
+        });
+        setEquipos(equiposEnriquecidos);
+      } catch (err) {
+        console.error("Error enriching equipos:", err);
+        setEquipos(data); // Fallback to raw data
+      }
     } else {
       setEquipos(data || []);
     }

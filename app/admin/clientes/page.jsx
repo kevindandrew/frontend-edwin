@@ -1,29 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import useClientes from "@/hooks/useClientes";
-import SearchBar from "@/components/clientes/SearchBar";
-import ClientesTable from "@/components/clientes/ClientesTable";
-import ClienteFormDialog from "@/components/clientes/ClienteFormDialog";
-import DeleteConfirmDialog from "@/components/clientes/DeleteConfirmDialog";
-import SalasModal from "@/components/clientes/SalasModal";
-import ClienteViewDialog from "@/components/clientes/ClienteViewDialog";
+import ClientesTable from "./_components/ClientesTable";
+import ClienteFormDialog from "./_components/ClienteFormDialog";
+import DeleteConfirmDialog from "./_components/DeleteConfirmDialog";
+import ClienteViewDialog from "./_components/ClienteViewDialog";
+import SalasModal from "./_components/SalasModal";
+import SearchBar from "./_components/SearchBar";
 
 export default function ClientesPage() {
   const { toast } = useToast();
   const {
     clientes,
     loading,
-    searchTerm,
-    setSearchTerm,
     createCliente,
     updateCliente,
     deleteCliente,
+    searchTerm,
+    setSearchTerm,
   } = useClientes();
-
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

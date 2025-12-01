@@ -1,25 +1,24 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import useCompras from "@/hooks/useCompras";
+import { Plus, Search, Eye, Edit, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import NuevaCompraDialog from "@/components/compras/NuevaCompraDialog";
-import CompraViewDialog from "@/components/compras/CompraViewDialog";
-import DeleteCompraDialog from "@/components/compras/DeleteCompraDialog";
-import { Badge } from "@/components/ui/badge";
+import useCompras from "@/hooks/useCompras";
+import NuevaCompraDialog from "./_components/NuevaCompraDialog";
+import CompraViewDialog from "./_components/CompraViewDialog";
+import DeleteCompraDialog from "./_components/DeleteCompraDialog";
 
 export default function ComprasPage() {
   const {
     compras,
     loading,
-    fetchDetallesPorCompra,
     crearCompra,
     actualizarCompra,
     eliminarCompra,
+    fetchDetallesPorCompra,
     crearDetalleCompra,
     actualizarDetalleCompra,
     eliminarDetalleCompra,
@@ -37,11 +36,16 @@ export default function ComprasPage() {
   }, [compras]);
 
   const cargarDetalles = async () => {
-    const detallesMap = {};
-    for (const compra of compras) {
+    const detallesPromises = compras.map(async (compra) => {
       const detalles = await fetchDetallesPorCompra(compra.id_compra);
-      detallesMap[compra.id_compra] = detalles;
-    }
+      return { id: compra.id_compra, detalles };
+    });
+
+    const resultados = await Promise.all(detallesPromises);
+    const detallesMap = {};
+    resultados.forEach(({ id, detalles }) => {
+      detallesMap[id] = detalles;
+    });
     setDetallesPorCompra(detallesMap);
   };
 

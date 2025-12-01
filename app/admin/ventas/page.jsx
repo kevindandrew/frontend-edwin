@@ -33,16 +33,23 @@ export default function VentasPage() {
   }, [ventas]);
 
   const cargarDetalles = async () => {
+    const promises = ventas.map(async (venta) => {
+      const [detalles, cliente] = await Promise.all([
+        fetchDetallesPorVenta(venta.id_venta),
+        fetchClienteById(venta.id_cliente),
+      ]);
+      return { id: venta.id_venta, detalles, cliente };
+    });
+
+    const resultados = await Promise.all(promises);
     const detallesMap = {};
     const clientesMap = {};
-    for (const venta of ventas) {
-      const detalles = await fetchDetallesPorVenta(venta.id_venta);
-      detallesMap[venta.id_venta] = detalles;
 
-      // Cargar cliente
-      const cliente = await fetchClienteById(venta.id_cliente);
-      clientesMap[venta.id_venta] = cliente;
-    }
+    resultados.forEach(({ id, detalles, cliente }) => {
+      detallesMap[id] = detalles;
+      clientesMap[id] = cliente;
+    });
+
     setDetallesPorVenta(detallesMap);
     setClientesPorVenta(clientesMap);
   };

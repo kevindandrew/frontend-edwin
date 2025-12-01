@@ -1,12 +1,23 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import { TrendingUp, Package, DollarSign, ArrowDownRight } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { VentasComprasChart } from "@/components/dashboard/VentasComprasChart";
-import { EquiposCategoriaChart } from "@/components/dashboard/EquiposCategoriaChart";
-import { ActividadReciente } from "@/components/dashboard/ActividadReciente";
-import { AuthErrorMessage } from "@/components/dashboard/AuthErrorMessage";
+import { StatCard } from "./dashboard/_components/StatCard";
+import { ActividadReciente } from "./dashboard/_components/ActividadReciente";
+import { AuthErrorMessage } from "./dashboard/_components/AuthErrorMessage";
+import { Spinner } from "@/components/ui/spinner";
+
+const VentasComprasChart = lazy(() =>
+  import("./dashboard/_components/VentasComprasChart").then((module) => ({
+    default: module.VentasComprasChart,
+  }))
+);
+const EquiposCategoriaChart = lazy(() =>
+  import("./dashboard/_components/EquiposCategoriaChart").then((module) => ({
+    default: module.EquiposCategoriaChart,
+  }))
+);
 
 export default function AdminHome() {
   const {
@@ -74,8 +85,27 @@ export default function AdminHome() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <VentasComprasChart data={chartData} year={new Date().getFullYear()} />
-        <EquiposCategoriaChart data={equiposPorCategoria} />
+        <Suspense
+          fallback={
+            <div className="h-[300px] flex items-center justify-center">
+              <Spinner />
+            </div>
+          }
+        >
+          <VentasComprasChart
+            data={chartData}
+            year={new Date().getFullYear()}
+          />
+        </Suspense>
+        <Suspense
+          fallback={
+            <div className="h-[300px] flex items-center justify-center">
+              <Spinner />
+            </div>
+          }
+        >
+          <EquiposCategoriaChart data={equiposPorCategoria} />
+        </Suspense>
       </div>
 
       {/* Recent Activity */}
