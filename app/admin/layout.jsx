@@ -65,6 +65,14 @@ export default function AdminLayout({ children }) {
         if (user.id_rol === 3) {
           router.push("/gestor");
         }
+        // Si es consulta (rol 4), redirigir a su panel
+        if (user.id_rol === 4) {
+          router.push("/consulta");
+        }
+        // Si es compras (rol 5), redirigir a su panel
+        if (user.id_rol === 5) {
+          router.push("/compras");
+        }
         // Aquí se podrían agregar más validaciones para otros roles
       } catch (e) {
         console.error("Error parsing user cookie", e);

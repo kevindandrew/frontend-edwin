@@ -96,6 +96,10 @@ export default function LoginPage() {
             router.push("/tecnico");
           } else if (userData.id_rol === 3) {
             router.push("/gestor");
+          } else if (userData.id_rol === 4) {
+            router.push("/consulta");
+          } else if (userData.id_rol === 5) {
+            router.push("/compras");
           } else {
             router.push("/admin");
           }

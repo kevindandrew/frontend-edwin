@@ -5,13 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  Monitor,
-  Wrench,
+  ShoppingCart,
+  Users,
+  PieChart,
   FileText,
-  BarChart,
   LogOut,
   Menu,
-  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -27,7 +26,7 @@ import {
 import Cookies from "js-cookie";
 import NotificationsPopover from "@/components/admin/NotificationsPopover";
 
-export default function GestorLayout({ children }) {
+export default function ComprasLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -45,12 +44,9 @@ export default function GestorLayout({ children }) {
 
     try {
       const userData = JSON.parse(userStr);
-      if (userData.id_rol !== 3) {
-        // Si no es Gestor (rol 3), redirigir según rol
-        if (userData.id_rol === 2) router.push("/tecnico");
-        else if (userData.id_rol === 4) router.push("/consulta");
-        else if (userData.id_rol === 5) router.push("/compras");
-        else router.push("/admin"); // Asumimos admin u otro
+      if (userData.id_rol !== 5) {
+        // Si no es Responsable de Compras (rol 5), redirigir
+        router.push("/unauthorized");
         return;
       }
       setUser(userData);
@@ -69,28 +65,28 @@ export default function GestorLayout({ children }) {
   const menuItems = [
     {
       title: "Dashboard",
-      href: "/gestor",
+      href: "/compras",
       icon: LayoutDashboard,
     },
     {
-      title: "Equipos",
-      href: "/gestor/equipos",
-      icon: Monitor,
+      title: "Solicitudes",
+      href: "/compras/solicitudes",
+      icon: ShoppingCart,
     },
     {
-      title: "Mantenimiento",
-      href: "/gestor/mantenimiento",
-      icon: Wrench,
+      title: "Proveedores",
+      href: "/compras/proveedores",
+      icon: Users,
     },
     {
-      title: "Datos Técnicos",
-      href: "/gestor/datos-tecnicos",
-      icon: FileText,
+      title: "Presupuesto",
+      href: "/compras/presupuesto",
+      icon: PieChart,
     },
     {
       title: "Reportes",
-      href: "/gestor/reportes",
-      icon: BarChart,
+      href: "/compras/reportes",
+      icon: FileText,
     },
   ];
 
@@ -98,8 +94,8 @@ export default function GestorLayout({ children }) {
     <div className="flex flex-col h-full bg-card border-r">
       <div className="p-6 border-b">
         <div className="flex items-center gap-2 font-bold text-xl text-primary">
-          <Monitor className="w-6 h-6" />
-          <span>Gestor Biomédico</span>
+          <ShoppingCart className="w-6 h-6" />
+          <span>Gestión de Compras</span>
         </div>
       </div>
       <div className="flex-1 py-6 px-4 space-y-2">
@@ -169,7 +165,7 @@ export default function GestorLayout({ children }) {
             </Sheet>
             <h2 className="text-lg font-semibold">
               {menuItems.find((item) => item.href === pathname)?.title ||
-                "Panel de Gestión"}
+                "Panel de Compras"}
             </h2>
           </div>
 
