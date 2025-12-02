@@ -8,14 +8,22 @@ export default function useRepuestos() {
   const [repuestos, setRepuestos] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState(null);
+
   const fetchRepuestos = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await get("/repuestos/?skip=0&limit=100");
-      if (data && !error) {
+      const { data, error: fetchError } = await get(
+        "/repuestos/?skip=0&limit=100"
+      );
+      if (fetchError) {
+        setError(fetchError);
+      } else if (data) {
         setRepuestos(data);
       }
-    } catch (error) {
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -98,6 +106,7 @@ export default function useRepuestos() {
   return {
     repuestos,
     loading,
+    error,
     fetchRepuestos,
     fetchRepuestosStockBajo,
     crearRepuesto,

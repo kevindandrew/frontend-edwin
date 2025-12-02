@@ -597,6 +597,45 @@ export const generarPDFAuditoria = async (auditorias) => {
   doc.save(`Auditoria_${new Date().toISOString().split("T")[0]}.pdf`);
 };
 
+// PDF de Lista de Compras
+export const generarPDFListaCompras = async (compras) => {
+  const { jsPDF, autoTable } = await loadPDFLibs();
+  const doc = new jsPDF();
+  await agregarEncabezado(doc, "REPORTE DE COMPRAS");
+
+  let yPos = 45;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Total de Compras: ${compras.length}`, 14, yPos);
+  yPos += 10;
+
+  if (compras && compras.length > 0) {
+    const data = compras.map((c) => [
+      c.id_compra,
+      c.fecha_solicitud,
+      c.fecha_aprobacion || "-",
+      `Bs. ${parseFloat(c.monto_total || 0).toFixed(2)}`,
+      c.estado_compra,
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [
+        ["ID", "Fecha Solicitud", "Fecha Aprobación", "Monto Total", "Estado"],
+      ],
+      body: data,
+      theme: "striped",
+      headStyles: { fillColor: [52, 152, 219] },
+    });
+  } else {
+    doc.text("No hay compras registradas", 14, yPos);
+  }
+
+  agregarPiePagina(doc);
+  doc.save(`Lista_Compras_${new Date().toISOString().split("T")[0]}.pdf`);
+};
+
 // PDF Completo con todos los reportes
 export const generarPDFCompleto = async (
   dashboard,

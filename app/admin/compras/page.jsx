@@ -11,6 +11,8 @@ import NuevaCompraDialog from "./_components/NuevaCompraDialog";
 import CompraViewDialog from "./_components/CompraViewDialog";
 import DeleteCompraDialog from "./_components/DeleteCompraDialog";
 
+import { generarPDFListaCompras } from "@/app/admin/reportes/_components/generarPDFReportes";
+
 export default function ComprasPage() {
   const {
     compras,
@@ -210,10 +212,20 @@ export default function ComprasPage() {
             Gestiona las órdenes de equipos médicos a proveedores especializados
           </p>
         </div>
-        <Button className="gap-2" onClick={handleNueva}>
-          <Plus className="w-4 h-4" />
-          Nueva Compra
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => generarPDFListaCompras(filteredCompras)}
+          >
+            <Eye className="w-4 h-4" />
+            Exportar PDF
+          </Button>
+          <Button className="gap-2" onClick={handleNueva}>
+            <Plus className="w-4 h-4" />
+            Nueva Compra
+          </Button>
+        </div>
       </div>
 
       <Card className="p-6">

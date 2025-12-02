@@ -39,7 +39,20 @@ const useFetch = (baseURL) => {
         const response = await fetch(url, config);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.detail) {
+              errorMessage = Array.isArray(errorData.detail)
+                ? errorData.detail.map((e) => e.msg).join(", ")
+                : errorData.detail;
+            } else if (errorData && errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } catch (e) {
+            // Ignore JSON parse error, keep default message
+          }
+          throw new Error(errorMessage);
         }
 
         let data = null;

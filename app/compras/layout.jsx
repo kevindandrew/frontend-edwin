@@ -11,6 +11,7 @@ import {
   FileText,
   LogOut,
   Menu,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -74,9 +75,9 @@ export default function ComprasLayout({ children }) {
       icon: ShoppingCart,
     },
     {
-      title: "Proveedores",
-      href: "/compras/proveedores",
-      icon: Users,
+      title: "Fabricantes",
+      href: "/compras/fabricantes",
+      icon: Building2,
     },
     {
       title: "Presupuesto",

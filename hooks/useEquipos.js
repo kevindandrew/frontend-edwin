@@ -11,8 +11,11 @@ export default function useEquipos() {
   const [filterEstado, setFilterEstado] = useState("");
   const [filterUbicacion, setFilterUbicacion] = useState("");
 
+  const [error, setError] = useState(null);
+
   const fetchEquipos = async () => {
     setLoading(true);
+    setError(null);
     let endpoint = "/equipos-biomedicos/";
 
     // Aplicar filtros si existen
@@ -22,8 +25,11 @@ export default function useEquipos() {
       endpoint = `/equipos-biomedicos/filtrar/ubicacion/${filterUbicacion}`;
     }
 
-    const { data, error } = await get(endpoint);
-    if (data && !error) {
+    const { data, error: fetchError } = await get(endpoint);
+
+    if (fetchError) {
+      setError(fetchError);
+    } else if (data) {
       try {
         // Fetch all locations and clients in parallel to avoid N+1 problem
         const [ubicacionesRes, clientesRes] = await Promise.all([
@@ -61,7 +67,7 @@ export default function useEquipos() {
         setEquipos(data); // Fallback to raw data
       }
     } else {
-      setEquipos(data || []);
+      setEquipos([]);
     }
     setLoading(false);
   };
@@ -136,6 +142,7 @@ export default function useEquipos() {
   return {
     equipos: filteredEquipos,
     loading,
+    error,
     searchTerm,
     setSearchTerm,
     filterEstado,
