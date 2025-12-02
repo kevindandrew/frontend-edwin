@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Eye, Edit, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Eye,
+  Edit,
+  Trash2,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -179,6 +187,34 @@ export default function ComprasPage() {
     }
   };
 
+  const handleAprobar = async (compra) => {
+    try {
+      await actualizarCompra(compra.id_compra, {
+        ...compra,
+        estado_compra: "Aprobada",
+        fecha_aprobacion: new Date().toISOString().split("T")[0],
+      });
+      // Recargar
+      window.location.reload();
+    } catch (error) {
+      console.error("Error aprobando compra:", error);
+    }
+  };
+
+  const handleRechazar = async (compra) => {
+    if (confirm("¿Estás seguro de rechazar esta solicitud?")) {
+      try {
+        await actualizarCompra(compra.id_compra, {
+          ...compra,
+          estado_compra: "Rechazada", // O Cancelada, según tu lógica
+        });
+        window.location.reload();
+      } catch (error) {
+        console.error("Error rechazando compra:", error);
+      }
+    }
+  };
+
   const getEstadoColor = (estado) => {
     const colors = {
       Aprobada:
@@ -326,6 +362,28 @@ export default function ComprasPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
+                          {c.estado_compra === "Solicitada" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                onClick={() => handleAprobar(c)}
+                                title="Aprobar Solicitud"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                onClick={() => handleRechazar(c)}
+                                title="Rechazar Solicitud"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"

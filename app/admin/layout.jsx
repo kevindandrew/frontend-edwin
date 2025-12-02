@@ -18,6 +18,7 @@ import {
   Box,
   FileText,
   FileSearch,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -35,6 +36,7 @@ const menuItems = [
   { name: "Repuestos", href: "/admin/repuestos", icon: Box },
   { name: "Mantenimiento", href: "/admin/mantenimiento", icon: Wrench },
   { name: "Compras", href: "/admin/compras", icon: ShoppingCart },
+  { name: "Fabricantes", href: "/admin/fabricantes", icon: Building2 },
   { name: "Ventas", href: "/admin/ventas", icon: TrendingUp },
   { name: "Reportes", href: "/admin/reportes", icon: FileText },
   { name: "Auditoría", href: "/admin/auditoria", icon: FileSearch },
