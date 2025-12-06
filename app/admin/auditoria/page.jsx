@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import useAuditoria from "@/hooks/useAuditoria";
 import useTecnicos from "@/hooks/useTecnicos";
+import { useUsuarios } from "@/hooks/useUsuarios";
 import AuditoriaFilters from "./_components/AuditoriaFilters";
 import AuditoriaTable from "./_components/AuditoriaTable";
 import AuditoriaDialog from "./_components/AuditoriaDialog";
@@ -34,6 +35,7 @@ export default function AuditoriaPage() {
   } = useAuditoria();
 
   const { tecnicos } = useTecnicos();
+  const { usuarios } = useUsuarios();
 
   useEffect(() => {
     fetchAuditorias();
@@ -72,7 +74,7 @@ export default function AuditoriaPage() {
   );
 
   const handleExportarPDF = () => {
-    generarPDFAuditoria(filteredAuditorias);
+    generarPDFAuditoria(filteredAuditorias, usuarios);
   };
 
   if (loading) {
@@ -130,6 +132,7 @@ export default function AuditoriaPage() {
 
       <AuditoriaTable
         auditorias={filteredAuditorias}
+        usuarios={usuarios}
         onVerDetalle={(auditoria) => {
           setAuditoriaSeleccionada(auditoria);
           setDetalleOpen(true);
@@ -140,6 +143,7 @@ export default function AuditoriaPage() {
         open={detalleOpen}
         onClose={() => setDetalleOpen(false)}
         auditoria={auditoriaSeleccionada}
+        usuarios={usuarios}
       />
     </div>
   );

@@ -27,7 +27,7 @@ const OPERACIONES = {
   },
 };
 
-export default function AuditoriaTable({ auditorias, onVerDetalle }) {
+export default function AuditoriaTable({ auditorias, usuarios, onVerDetalle }) {
   if (!auditorias?.length) {
     return (
       <Card className="p-8 text-center text-muted-foreground">
@@ -48,7 +48,6 @@ export default function AuditoriaTable({ auditorias, onVerDetalle }) {
               <TableHead>Operación</TableHead>
               <TableHead>Usuario</TableHead>
               <TableHead>ID Registro</TableHead>
-              <TableHead>IP Origen</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -68,11 +67,16 @@ export default function AuditoriaTable({ auditorias, onVerDetalle }) {
                       auditoria.operacion}
                   </Badge>
                 </TableCell>
-                <TableCell>{auditoria.id_usuario}</TableCell>
-                <TableCell>{auditoria.id_registro}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {auditoria.ip_origen}
+                <TableCell>
+                  {auditoria.usuario?.nombre_completo ||
+                    (usuarios &&
+                      usuarios.find(
+                        (u) => u.id_usuario === auditoria.id_usuario
+                      )?.nombre_completo) ||
+                    (auditoria.id_usuario ? auditoria.id_usuario : "Sistema")}
                 </TableCell>
+                <TableCell>{auditoria.id_registro}</TableCell>
+
                 <TableCell className="text-right">
                   <Button
                     variant="ghost"

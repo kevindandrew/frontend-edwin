@@ -8,6 +8,10 @@ import { useState, useEffect } from "react";
 import useVentas from "@/hooks/useVentas";
 import useClientes from "@/hooks/useClientes";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/hooks/use-toast";
+import VentaFormDialog from "./_components/VentaFormDialog";
+import DeleteConfirmDialog from "./_components/DeleteConfirmDialog";
+import VentaViewDialog from "./_components/VentaViewDialog";
 
 export default function VentasPage() {
   const {
@@ -18,7 +22,10 @@ export default function VentasPage() {
     actualizarVenta,
     eliminarVenta,
   } = useVentas();
+
+  const { toast } = useToast();
   const { clientes, fetchClienteById } = useClientes();
+  const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [detallesPorVenta, setDetallesPorVenta] = useState({});
   const [clientesPorVenta, setClientesPorVenta] = useState({});
@@ -193,9 +200,6 @@ export default function VentasPage() {
                     Fecha Venta
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Items
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
                     Total
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">
@@ -223,7 +227,6 @@ export default function VentasPage() {
                           `Cliente #${v.id_cliente}`}
                       </td>
                       <td className="px-6 py-4 text-sm">{v.fecha_venta}</td>
-                      <td className="px-6 py-4 text-sm">{detalles.length}</td>
                       <td className="px-6 py-4 text-sm font-medium">
                         Bs. {parseFloat(v.monto_total || 0).toFixed(2)}
                       </td>
@@ -275,6 +278,76 @@ export default function VentasPage() {
           </div>
         )}
       </Card>
+
+      <VentaFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        venta={ventaSeleccionada}
+        onSubmit={async (payload) => {
+          setIsSaving(true);
+          try {
+            if (ventaSeleccionada) {
+              await actualizarVenta(ventaSeleccionada.id_venta, payload);
+              toast({
+                title: "Éxito",
+                description: "Venta actualizada correctamente",
+              });
+            } else {
+              await crearVenta(payload);
+              toast({
+                title: "Éxito",
+                description: "Venta creada correctamente",
+              });
+            }
+            setDialogOpen(false);
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: error.message || "Error al guardar la venta",
+              variant: "destructive",
+            });
+          } finally {
+            setIsSaving(false);
+          }
+        }}
+        loading={isSaving}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={async () => {
+          setIsSaving(true);
+          try {
+            await eliminarVenta(ventaSeleccionada.id_venta);
+            toast({
+              title: "Éxito",
+              description: "Venta eliminada correctamente",
+            });
+            setDeleteDialogOpen(false);
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: error.message || "Error al eliminar la venta",
+              variant: "destructive",
+            });
+          } finally {
+            setIsSaving(false);
+          }
+        }}
+        loading={isSaving}
+      />
+
+      <VentaViewDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        venta={ventaSeleccionada}
+        cliente={
+          ventaSeleccionada
+            ? clientesPorVenta[ventaSeleccionada.id_venta]
+            : null
+        }
+      />
     </div>
   );
 }

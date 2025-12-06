@@ -553,7 +553,7 @@ export const generarPDFUsuarios = async (usuarios) => {
 };
 
 // PDF de Auditoría
-export const generarPDFAuditoria = async (auditorias) => {
+export const generarPDFAuditoria = async (auditorias, usuarios = []) => {
   const { jsPDF, autoTable } = await loadPDFLibs();
   const doc = new jsPDF();
   await agregarEncabezado(doc, "REPORTE DE AUDITORÍA DEL SISTEMA");
@@ -568,7 +568,11 @@ export const generarPDFAuditoria = async (auditorias) => {
   if (auditorias && auditorias.length > 0) {
     const data = auditorias.map((a) => [
       new Date(a.fecha_operacion).toLocaleString(),
-      a.usuario_nombre || a.id_usuario,
+      a.usuario?.nombre_completo ||
+        (usuarios &&
+          usuarios.find((u) => u.id_usuario === a.id_usuario)
+            ?.nombre_completo) ||
+        (a.id_usuario ? a.id_usuario : "Sistema"),
       a.operacion,
       a.tabla,
       a.detalles ? JSON.stringify(a.detalles).substring(0, 50) + "..." : "N/A",

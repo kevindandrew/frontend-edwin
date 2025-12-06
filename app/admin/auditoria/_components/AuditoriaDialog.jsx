@@ -48,7 +48,12 @@ const obtenerCambios = (datosAnteriores, datosNuevos) => {
   return cambios;
 };
 
-export default function AuditoriaDialog({ open, onClose, auditoria }) {
+export default function AuditoriaDialog({
+  open,
+  onClose,
+  auditoria,
+  usuarios,
+}) {
   if (!auditoria) return null;
 
   const cambios =
@@ -79,7 +84,14 @@ export default function AuditoriaDialog({ open, onClose, auditoria }) {
               </div>
               <div>
                 <span className="text-muted-foreground">Usuario:</span>{" "}
-                <span className="font-medium">{auditoria.id_usuario}</span>
+                <span className="font-medium">
+                  {auditoria.usuario?.nombre_completo ||
+                    (usuarios &&
+                      usuarios.find(
+                        (u) => u.id_usuario === auditoria.id_usuario
+                      )?.nombre_completo) ||
+                    (auditoria.id_usuario ? auditoria.id_usuario : "Sistema")}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Tabla:</span>{" "}
@@ -91,10 +103,6 @@ export default function AuditoriaDialog({ open, onClose, auditoria }) {
                   {OPERACIONES[auditoria.operacion]?.label ||
                     auditoria.operacion}
                 </Badge>
-              </div>
-              <div>
-                <span className="text-muted-foreground">IP Origen:</span>{" "}
-                <span className="font-medium">{auditoria.ip_origen}</span>
               </div>
             </div>
           </Card>

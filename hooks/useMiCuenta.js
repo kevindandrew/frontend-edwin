@@ -18,7 +18,7 @@ export default function useMiCuenta() {
       }
 
       const usuarioData = JSON.parse(usuarioGuardado);
-      const response = await get(`/usuarios/${usuarioData.id}`);
+      const response = await get(`/usuarios/${usuarioData.id_usuario}`);
 
       if (response.data && !response.error) {
         setUsuario(response.data);
@@ -41,7 +41,7 @@ export default function useMiCuenta() {
 
       const usuarioData = JSON.parse(usuarioGuardado);
       const response = await put(
-        `/usuarios/${usuarioData.id}`,
+        `/usuarios/${usuarioData.id_usuario}`,
         datosActualizados
       );
 
