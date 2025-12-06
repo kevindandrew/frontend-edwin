@@ -11,8 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { FileText, Download, BarChart2, DollarSign } from "lucide-react";
 import {
-  generarReporteEquiposCriticos,
-  generarReporteProyeccionMantenimiento,
+  generarPDFEquiposCriticos,
+  generarPDFProyecciones,
 } from "@/app/admin/reportes/_components/generarPDFReportes";
 import useEquipos from "@/hooks/useEquipos";
 import useMantenimientos from "@/hooks/useMantenimientos";
@@ -27,9 +27,9 @@ export default function GestorReportesPage() {
     setGenerating(true);
     try {
       if (type === "equipos_criticos") {
-        await generarReporteEquiposCriticos(equipos);
+        await generarPDFEquiposCriticos(equipos);
       } else if (type === "proyeccion") {
-        await generarReporteProyeccionMantenimiento(mantenimientos);
+        await generarPDFProyecciones(mantenimientos);
       }
       // Aquí se podrían agregar más tipos de reportes específicos para el gestor
     } catch (error) {
